@@ -1,0 +1,94 @@
+---
+- name: Mount root subvolume
+  mount:
+    path: /mnt
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: subvol=@,compress-force=zstd,space_cache=v2
+    state: mounted
+  tags:
+    - post_restart_mount
+
+- name: Create mountpoints for EFI and btrfs subvolumes
+  file:
+    path: /mnt/{{ item }}
+    state: directory
+  loop:
+    - efi
+    - home
+    - var/spool
+    - var/cache
+    - var/tmp
+    - var/lib/libvirt/images
+    - var/log
+    - snapshots
+    - swap
+
+- name: Mount EFI filesystem
+  mount:
+    path: /mnt/efi
+    src: UUID={{ efi_uuid.stdout }}
+    fstype: vfat
+    state: mounted
+  tags:
+    - post_restart_mount
+
+- name: Mount btrfs subvolumes with COW
+  mount:
+    path: /mnt/{{ item }}
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: subvol=@{{ item }},compress-force=zstd,space_cache=v2
+    state: mounted
+  loop:
+    - home
+    - snapshots
+  tags:
+    - post_restart_mount
+
+- name: Mount @var btrfs subvolumes with COW
+  mount:
+    path: /mnt/var/{{ item }}
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: subvol=@var_{{ item }},compress-force=zstd,space_cache=v2
+    state: mounted
+  loop:
+    - spool
+    - log
+  tags:
+    - post_restart_mount
+
+- name: Mount @var btrfs subvolumes with nodatacow
+  mount:
+    path: /mnt/var/{{ item }}
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: subvol=@var_{{ item }},nodatacow,compress-force=zstd,space_cache=v2
+    state: mounted
+  loop:
+    - cache
+    - tmp
+    - log
+  tags:
+    - post_restart_mount
+
+- name: Mount libvirt subvolume with nodatacow
+  mount:
+    path: /mnt/var/lib/libvirt
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: subvol=@var_lib_libvirt,nodatacow,compress-force=zstd,space_cache=v2
+    state: mounted
+  tags:
+    - post_restart_mount
+
+- name: Mount btrfs swap subvolume
+  mount:
+    path: /mnt/swap
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: subvol=@swap,nodatacow,space_cache=v2
+    state: mounted
+  tags:
+    - post_restart_mount

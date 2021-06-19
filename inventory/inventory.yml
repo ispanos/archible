@@ -1,0 +1,17 @@
+---
+all:
+  hosts:
+  children:
+    testing:
+      hosts:
+        vm:
+          ansible_host: 192.168.122.150
+          user_password: >
+            $6$6iQWFguOzI4u$Qq.1tosCr81pXKxhxKznVAzenvO14cWl5mAC8EZBzL8TLyN8ExAQzKl2h3RHQYdOVbzft2mzKPmR/C7UHIx381
+        postvm:
+          ansible_host: 192.168.122.151
+          ansible_user: test
+    local:
+      hosts:
+        localhost:
+          ansible_connection: local

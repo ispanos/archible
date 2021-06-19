@@ -1,0 +1,31 @@
+---
+- name: Generate fstab
+  command: genfstab -U /mnt
+  register: gen_fstab
+
+- name: Write fstab file
+  copy:
+    content: "{{ gen_fstab.stdout }}"
+    dest: /mnt/etc/fstab
+
+- name: Set local timezone
+  command: "arch-chroot /mnt ln -sf /usr/share/zoneinfo/{{ timezone }} /etc/localtime"
+
+- name: Sync clock
+  command: arch-chroot /mnt hwclock --systohc
+
+- name: Configure locale.gen
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/locale.gen
+    regexp: '{{ item.regex }}'
+    line: '{{ item.line }}'
+  loop:
+    - "{{ locales_list }}"
+
+- name: Create locale.conf
+  copy:
+    content: "LANG={{ lang }}"
+    dest: /mnt/etc/locale.conf
+
+- name: Generate locales
+  command: arch-chroot /mnt locale-gen

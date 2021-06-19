@@ -1,0 +1,21 @@
+---
+- name: Add mkinitcpio.conf hooks
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/mkinitcpio.conf
+    regexp: ^HOOKS=
+    line: HOOKS=(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck)
+
+- name: Create vconsole config file
+  copy:
+    dest: /mnt/etc/vconsole.conf
+    content: |
+      vconsole.font=
+      vconsole.keymap=us
+      FONT=
+      KEYMAP=us
+
+- name: Add btrfs filesystem module
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/mkinitcpio.conf
+    regexp: ^MODULES=
+    line: MODULES=(btrfs)

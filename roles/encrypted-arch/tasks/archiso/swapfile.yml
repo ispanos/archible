@@ -1,0 +1,31 @@
+---
+- name: Create zerolength file
+  command: arch-chroot /mnt truncate -s 0 /swap/swapfile
+
+- name: Disable COW for swapfile and set permissions
+  file:
+    path: /mnt/swap/swapfile
+    mode: 0600
+    attributes: +C
+
+- name: Disable compression for swap file
+  command: arch-chroot /mnt btrfs property set /swap/swapfile compression none
+
+- name: Allocate 2G swapfile
+  command: fallocate -l 2G /mnt/swap/swapfile
+
+- name: Format swap file
+  command: arch-chroot /mnt mkswap /swap/swapfile
+
+- name: Add swap file to fstab
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/fstab
+    regexp: ^/swap/swapfile
+    line: /swap/swapfile none swap sw 0 0
+
+- name: Set swappiness
+  copy:
+    content: |
+      vm.swappiness=10
+      vm.vfs_cache_pressure=50
+    dest: /mnt/etc/sysctl.d/99-sysctl.conf

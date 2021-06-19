@@ -1,0 +1,17 @@
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = linux
+Target = {{ cpuVendor.stdout }}-ucode
+Target = systemd
+
+[Action]
+Description = Updating Unified Kernel Image.
+When = PostTransaction
+Exec = objcopy \
+    --add-section .osrel="/usr/lib/os-release" --change-section-vma .osrel=0x20000 \
+    --add-section .cmdline="/root/kernel-command-line.txt" --change-section-vma .cmdline=0x30000 \
+    --add-section .splash="/usr/share/systemd/bootctl/splash-arch.bmp" --change-section-vma .splash=0x40000 \
+    --add-section .linux="/boot/vmlinuz-linux" --change-section-vma .linux=0x2000000 \
+    --add-section .initrd="/boot/my_new_initrd.img" --change-section-vma .initrd=0x3000000 \
+    "/usr/lib/systemd/boot/efi/linuxx64.efi.stub" "/efi/EFI/Linux/linux.efi"

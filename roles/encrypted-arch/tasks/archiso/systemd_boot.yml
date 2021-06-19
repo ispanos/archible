@@ -1,0 +1,21 @@
+---
+- name: Install bootloader
+  command: arch-chroot /mnt bootctl --esp-path=/efi install
+
+- name: Create pacman hooks directory
+  file:
+    path: /mnt/etc/pacman.d/hooks/
+    state: directory
+
+- name: Auto-update bootloader hook
+  copy:
+    src: hooks/systemd-boot.hook
+    dest: /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
+
+- name: Add loader Configuration
+  copy:
+    content: |
+      default  ArchLinux
+      console-mode max
+      editor   no
+    dest: /mnt/efi/loader/loader.conf

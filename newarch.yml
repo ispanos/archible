@@ -1,0 +1,93 @@
+---
+- hosts: all
+
+  vars_files:
+    - vars/packages.yml
+
+
+  tasks:
+
+    # TODO
+
+    # git clone -q https://aur.archlinux.org/paru-bin.git /tmp/paru
+    # cd /tmp/paru && makepkg -si --noconfirm --needed
+    # it87 role - ansible_Home
+    # logi role - ansible_Home
+    - name: Update
+      become: true
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+
+    # This will not work for AUR pacakges.
+    - name: Install package_list
+      become: true
+      community.general.pacman:
+        name: "{{ package_list }}"
+        state: present
+
+    - name: Dotfiles
+      block:
+        - name: Remove doc links from motd
+          become: true
+          file:
+            path: /etc/update-motd.d/10-help-text
+            state: absent
+
+        - name: Remove default bash files
+          file:
+            path: '{{ item }}'
+            state: absent
+          with_items:
+            - "{{ ansible_user_dir|quote }}/.bash_history"
+            - "{{ ansible_user_dir|quote }}/.bashrc"
+            - "{{ ansible_user_dir|quote }}/.bash_logout"
+
+        - name: Check if zsh is installed
+          stat:
+            path: /usr/bin/zsh
+          register: zsh_result
+
+        - name: Change default shell to zsh
+          become: true
+          user:
+            name: "{{ ansible_user_id }}"
+            shell: /usr/bin/zsh
+          when: zsh_result.stat.exists
+
+        - name: Clone dotfiles - bare repository
+          shell: |
+              dotfilesrepo="https://github.com/ispanos/dotfiles"
+              dir=$(/usr/bin/mktemp -d)
+              echo ".cfg" >"$dir/.gitignore"
+              /usr/bin/git clone -q --bare "$dotfilesrepo" "$dir/.cfg"
+              /usr/bin/git --git-dir="$dir/.cfg/" --work-tree="$dir" checkout
+              /usr/bin/git --git-dir="$dir/.cfg/" --work-tree="$dir" config \
+                          --local status.showUntrackedFiles no
+              /usr/bin/rm "$dir/.gitignore"
+              /usr/bin/cp -rfT "$dir/" "{{ ansible_user_dir|quote }}"
+          args:
+            creates: "{{ ansible_user_dir|quote }}/.cfg"
+
+    - name: Logitech stuff
+      block:
+        # - g810-led-git
+        # - solaar
+        - name: G810-Profile
+          become: true
+          copy:
+            content: |
+              a 856054
+              k logo 000030
+              k win_left 000030
+              k win_right 000030
+              k game_mode ff0000
+              k caps_indicator ff0000
+              k scrolllock 000000
+              k num_indicator ffffff
+              k light 505050
+              g arrows 000030
+              c
+            dest: /etc/g810-led/profile
+            mode: u=rw,g=r,o=r
+            backup: true

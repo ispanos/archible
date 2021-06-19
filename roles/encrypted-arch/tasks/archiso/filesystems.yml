@@ -1,0 +1,57 @@
+---
+- name: Create FAT32 filesystem in efi partition
+  filesystem:
+    dev: '{{ efi_partition }}'
+    fstype: vfat
+    opts: "-F32 -n ESP"
+    force: true
+
+- name: Create btrfs filesystem in root volume
+  filesystem:
+    dev: /dev/mapper/root
+    fstype: btrfs
+    opts: "--label root"
+    force: true
+
+- name: Get UUID for EFI filesystem
+  command: blkid -s UUID -o value '{{ efi_partition }}'
+  register: efi_uuid
+  changed_when: false
+  tags:
+    - post_restart_mount
+
+- name: Get UUID for root filesystem
+  command: blkid -s UUID -o value /dev/mapper/root
+  register: root_uuid
+  changed_when: false
+  tags:
+    - post_restart_mount
+
+- name: Mount top level btrfs subvolume
+  mount:
+    path: /mnt
+    src: UUID={{ root_uuid.stdout }}
+    fstype: btrfs
+    opts: compress-force=zstd,space_cache=v2
+    state: mounted
+
+- name: Create subvolumes
+  command: btrfs subvolume create {{ item }}
+  loop:
+    - /mnt/@
+    - /mnt/@home
+    - /mnt/@var_spool
+    - /mnt/@var_cache
+    - /mnt/@var_tmp
+    - /mnt/@var_lib_libvirt
+    - /mnt/@var_log
+    - /mnt/@snapshots
+    - /mnt/@swap
+
+- name: Set default subvolume to @
+  command: btrfs subvolume set-default /mnt/@
+
+- name: Unmount top level subvolume
+  mount:
+    path: /mnt
+    state: unmounted

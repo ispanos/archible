@@ -1,0 +1,144 @@
+---
+package_list:
+  - general_utils:
+      - zsh
+      - zsh-syntax-highlighting
+      - command-not-found
+      - atool
+      - borgbackup
+      - btrfs-progs
+      - calcurse
+      - dialog
+      - docx2txt
+      - fail2ban
+      - fzf
+      - hddtemp
+      - highlight
+      - htop
+      - inxi
+      - molly-guard
+      - neofetch
+      - needrestart
+      - nvme-cli
+      - odt2txt
+      - p7zip-full
+      - procinfo
+      - python3-llfuse
+      - sshfs
+      - tmux
+      - tree
+      - unrar
+      - w3m
+      - whois
+      - powertop
+      - pv
+      - etherwake
+      - smartmontools
+  - dev:
+      - alacritty
+      - code
+      - qemu
+      - ebtables
+      - virt-manager
+      - virtualbox
+      - gretl
+      - r-base
+      - r-cran-jsonlite
+  - i3:
+      - arandr
+      - blueman
+      - feh
+      - i3
+      - i3blocks
+      - imagemagick
+      - jq
+      - libnotify-bin
+      - maim
+      - numlockx
+      - pavucontrol
+      - playerctl
+      - policykit-1-gnome
+      - xbacklight
+      - xdotool
+      - xsettingsd
+      - libxkbfile-dev
+      - fonts-font-awesome
+
+  - other:
+      - ubuntu-restricted-addons
+      - ubuntu-restricted-extras
+      - fonts-font-awesome
+      - gthumb
+      - mpv
+      - paprefs
+      - pavucontrol
+      - aptitude
+      - python3-pip
+      - google-chrome-stable
+      - obs-studio
+      - flatpak
+      - hunspell-el
+      - qt5-style-kvantum
+      - qt5-style-kvantum-themes
+      - cmake
+      - gitg
+      - neovim
+      - python3-autopep8
+      - python3-pip
+      - shellcheck
+      - node-typescript
+      - sqlitebrowser
+      - nmap
+
+      # ubuntu:
+      #   - org.gtk.Gtk3theme.Pop-dark
+      #   - com.spotify.Client
+      #   - com.transmissionbt.Transmission
+      #   - io.github.Qalculate
+      #   - nl.hjdskes.gcolor3
+      #   - com.discordapp.Discord
+      #   - com.microsoft.Teams
+      #   - com.mattermost.Desktop
+      #   - com.slack.Slack
+      #   - us.zoom.Zoom
+      #   - org.gnome.gitlab.YaLTeR.VideoTrimmer
+      #   - org.gimp.GIMP
+      #   - org.audacityteam.Audacity
+      #   - com.github.xournalpp.xournalpp
+      #   - ws.openarena.OpenArena
+      #   - org.openttd.OpenTTD
+      #   - io.dbeaver.DBeaverCommunity
+      #   - io.dbeaver.DBeaverCommunity.Client.mariadb
+      #   - org.remmina.Remmina
+
+
+      # - name: Download exa
+      #   become: true
+      #   unarchive:
+      #     src: https://github.com/ogham/exa/releases/download/v0.10.1/exa-linux-x86_64-v0.10.1.zip
+      #     dest: /tmp
+      #     remote_src: true
+      #   notify:
+      #     - Move exa in to PATH
+
+
+      # - name: Add sqlitebrowser ppa
+      #   become: true
+      #   apt_repository:
+      #     repo: ppa:linuxgndu/sqlitebrowser
+      #     update_cache: true
+
+      # - name: Add OBS ppa
+      #   become: true
+      #   apt_repository:
+      #     repo: ppa:obsproject/obs-studio
+      #     update_cache: true
+
+
+      #     - name: Install youtube_dl
+      #   become: true
+      #   pip:
+      #     name: youtube_dl
+      #     state: latest
+
+      #     apt-transport-https

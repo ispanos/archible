@@ -1,0 +1,15 @@
+#!/bin/bash
+trap \
+ "{ virsh shutdown archlinux ; exit 3; }" \
+ SIGINT SIGTERM ERR EXIT
+
+virsh start archlinux
+
+echo "Waiting for ping responce"
+while :; do 
+    ping -c 1 192.168.122.150 >/dev/null && break || sleep 2
+done
+sleep 10
+
+ansible-playbook install.yml --skip-tags reboot
+virsh shutdown archlinux

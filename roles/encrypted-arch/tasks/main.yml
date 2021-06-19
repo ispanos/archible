@@ -1,0 +1,125 @@
+---
+- name: Copy keyfile
+  copy:
+    src: '{{ luks_keyfile }}'
+    dest: /root/keyfile
+  tags:
+    - always
+    - post_restart_mount
+
+- include_tasks: archiso/partition.yml
+
+- name: Open LUKS volume
+  luks_device:
+    device: '{{ root_partition }}'
+    keyfile: /root/keyfile
+    name: root
+    state: opened
+  tags:
+    - never
+    - post_restart_mount
+
+- name: Get UUID for root LUKS volume
+  command: blkid -s UUID -o value '{{ root_partition }}'
+  register: root_luks_uuid
+  changed_when: false
+  tags:
+    - always
+    - post_restart_mount
+
+- include_tasks: archiso/filesystems.yml
+  tags:
+    - post_restart_mount
+
+- include_tasks: archiso/mount.yml
+  tags:
+    - mount_filesystems
+    - post_restart_mount
+
+- name: Disable datacow for some subvolumes/directories
+  # This is needed because the nodatacow mount option doesn't work yet
+  # The options of the subvolume mounted first are used for the whole filesystem
+  file:
+    path: "{{ item }}"
+    attributes: +C
+  loop:
+    - /mnt/var/cache
+    - /mnt/var/log
+    - /mnt/var/tmp
+    - /mnt/var/lib/libvirt
+    - /mnt/swap
+  tags:
+    - nodatacow
+
+- name: Mount pacman cache partition if available.
+  block:
+    - name: Create mountpoints pacman cache
+      file:
+        path: /mnt/var/cache/pacman/pkg
+        state: directory
+    - name: Mount pacman cache partition
+      mount:
+        path: /mnt/var/cache/pacman/pkg/
+        src: "{{ pacman_cache }}"
+        fstype: ext4
+        state: mounted
+  ignore_errors: true
+  tags:
+    - dev
+
+- name: Install base, make, zstd, mkinitcpio
+  command: /usr/bin/pacstrap /mnt base make zstd mkinitcpio
+
+- name: Enable all cores when compiling
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/makepkg.conf
+    regexp: ^#MAKEFLAGS="-j2"
+    line: "MAKEFLAGS=\"-j$(nproc)\""
+
+- name: Enable all cores on zstd
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/makepkg.conf
+    regexp: ^COMPRESSZST=
+    line: COMPRESSZST=(zstd -T0 -c -z -q -)
+
+# Doing it before installing a kernel saves time re-building the kernel
+- include_tasks: archiso/systemd_initramfs.yml
+- include_tasks: archiso/multilib.yml
+  when: enable_multilib | bool | default(False)
+- include_tasks: archiso/pacman.yml
+- include_tasks: archiso/settings.yml
+- include_tasks: archiso/networking.yml
+- include_tasks: archiso/user.yml
+
+- name: Check if swap file exists
+  stat:
+    path: /swap/swapfile
+  register: swap_file_check
+  tags:
+    - swapfile
+
+- include_tasks: archiso/swapfile.yml
+  when: not swap_file_check.stat.exists
+  tags:
+    - swapfile
+
+- include_tasks: archiso/touch_ups.yml
+- include_tasks: archiso/systemd_boot.yml
+  tags:
+    - dboot
+
+- include_tasks: archiso/unified_kernel_image.yml
+  tags:
+    - unified
+    - dboot
+
+- include_tasks: archiso/ssh.yml
+  tags:
+    - ssh
+
+- name: Reboot
+  reboot:
+    connect_timeout: 1
+    reboot_timeout: 1
+  failed_when: false
+  tags: reboot

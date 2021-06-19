@@ -1,0 +1,47 @@
+---
+- name: Update SSH configuration to be more secure.
+  lineinfile:
+    dest: "{{ ssh_config_path }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: 'sshd -T -f %s'
+    mode: 0644
+  with_items:
+    - regexp: "^PasswordAuthentication"
+      line: "PasswordAuthentication {{ ssh_password_authentication }}"
+    - regexp: "^PermitRootLogin"
+      line: "PermitRootLogin {{ ssh_permit_root_login }}"
+    - regexp: "^Port"
+      line: "Port {{ ssh_port }}"
+    - regexp: "^UseDNS"
+      line: "UseDNS {{ ssh_usedns }}"
+    - regexp: "^PermitEmptyPasswords"
+      line: "PermitEmptyPasswords {{ ssh_permit_empty_password }}"
+    - regexp: "^ChallengeResponseAuthentication"
+      line: "ChallengeResponseAuthentication {{ ssh_challenge_response_auth }}"
+    - regexp: "^GSSAPIAuthentication"
+      line: "GSSAPIAuthentication {{ ssh_gss_api_authentication }}"
+    - regexp: "^X11Forwarding"
+      line: "X11Forwarding {{ ssh_x11_forwarding }}"
+
+- gather_facts:
+
+- name: Create user's ssh directory
+  file:
+    path: "/mnt/home/{{ user_name }}/.ssh"
+    state: directory
+    mode: '700'
+    # owner: "{{ user_name }}"
+    # group: "{{ user_name }}"
+
+- name: Copy over ssh key from current Ansible controller as an authorized key
+  copy:
+    src: '{{ lookup("env", "HOME") }}/.ssh/{{ ssh_key }}'
+    dest: '/mnt/home/{{ user_name }}/.ssh/authorized_keys'
+    mode: '700'
+    # owner: "{{ user_name }}"
+    # group: "{{ user_name }}"
+
+- name: Enable sshd
+  command: arch-chroot /mnt systemctl enable sshd

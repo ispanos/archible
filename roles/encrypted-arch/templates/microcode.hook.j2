@@ -1,0 +1,11 @@
+{{ ansible_managed }}
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = linux
+Target = {{ cpuVendor.stdout }}-ucode
+
+[Action]
+Description = Updating microcode in initramfs
+When = PostTransaction
+Exec =  cat /boot/{{ cpuVendor.stdout }}-ucode.img /boot/initramfs-linux.img > /boot/my_new_initrd.img

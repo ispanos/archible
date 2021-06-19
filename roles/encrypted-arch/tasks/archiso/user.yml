@@ -1,0 +1,22 @@
+---
+- name: Create user account
+  command: >-
+    arch-chroot /mnt useradd {{ user_name }}
+                -Um -G wheel,power
+                -s /bin/zsh --password {{ user_password }}
+
+- name: Check if sudoers.d/wheel file exists
+  stat:
+    path: /mnt/etc/sudoers.d/wheel
+  register: wheel_file_check
+
+- name: Add wheel group to sudoers
+  copy:
+    dest: /mnt/etc/sudoers.d/wheel
+    content: "%wheel ALL=(ALL) ALL"
+  when: not wheel_file_check.stat.exists
+
+- name: Set permissions for sudoers wheel file
+  file:
+    path: /mnt/etc/sudoers.d/wheel
+    mode: '0440'

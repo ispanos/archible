@@ -1,0 +1,12 @@
+---
+- name: Uncomment multilib repo
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/pacman.conf
+    regexp: ^#\[multilib\]
+    line: "[multilib]\nInclude = /etc/pacman.d/mirrorlist"
+
+- name: Sync pacman database
+  command: arch-chroot /mnt pacman -Sy
+
+- name: Update pacman database files
+  command: arch-chroot /mnt pacman -Fy

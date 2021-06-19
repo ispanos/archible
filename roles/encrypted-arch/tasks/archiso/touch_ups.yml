@@ -1,0 +1,17 @@
+---
+- name: Enable color in pacman
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/pacman.conf
+    regexp: ^#Color
+    line: Color\n ILoveCandy
+
+- name: Enable color in nano
+  ansible.builtin.lineinfile:
+    dest: /mnt/etc/nanorc
+    regexp: "^ #include \"/usr/share/nano/*.nanorc\""
+    line: "include \"/usr/share/nano/*.nanorc\""
+
+- name: Disable beeps
+  copy:
+    dest: /mnt/etc/modprobe.d/disablebeep.conf
+    content: blacklist pcspkr

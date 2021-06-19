@@ -1,0 +1,92 @@
+---
+# NOT TESTED
+
+- name: Add mkinitcpio.conf hooks
+  lineinfile:
+    dest: /mnt/etc/mkinitcpio.conf
+    regexp: ^HOOKS=
+    line: HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt filesystems fsck)
+
+- name: Set default compression to zstd
+  lineinfile:
+    dest: /mnt/etc/mkinitcpio.conf
+    regexp: ^#COMPRESSION="zstd"
+    line: COMPRESSION="zstd"
+
+- name: Set default zstd settings
+  lineinfile:
+    dest: /mnt/etc/mkinitcpio.conf
+    regexp: ^#COMPRESSION_OPTIONS=
+    line: COMPRESSION="-T0 -c -z -q -9 -"
+
+- name: Create luks-kes directory
+  file:
+    path: /mnt/etc/luks-keys
+    state: directory
+
+- name: Generate key
+  command: dd bs=256 count=1 if=/dev/random
+  register: bin_key
+
+- name: Copy key to the new keyfile
+  copy:
+    content: '{{ bin_key.stdout | string | b64encode }}'
+    dest: /mnt/etc/luks-keys/root.keyfile
+    owner: root
+    mode: '0500'
+
+- name: Add new key to the LUKS container
+  luks_device:
+    device: '{{ root_partition }}'
+    keyfile: /root/keyfile
+    new_keyfile: /mnt/etc/luks-keys/root.keyfile
+
+- name: Add keyfile to initramfs image
+  lineinfile:
+    dest: /mnt/etc/mkinitcpio.conf
+    regexp: ^FILES=
+    line: FILES=(/etc/luks-keys/root.keyfile)
+
+- name: Create list of initramfs files
+  find:
+    paths: /mnt/boot/
+    patterns: "initramfs-linux*"
+  register: initramfs_files
+
+- name: Change initramfs permissions (includes keyfile)
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    mode: '0600'
+  loop: "{{ initramfs_files.files|flatten(levels=1) }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Install grub package
+  command: arch-chroot /mnt pacman -S --noconfirm --needed grub os-prober
+
+- name: Enable booting from encrypted /boot
+  lineinfile:
+    dest: /mnt/etc/default/grub
+    regexp: ^#GRUB_ENABLE_CRYPTODISK=
+    line: GRUB_ENABLE_CRYPTODISK=y
+
+- name: Add kernel parameters to grub config
+  lineinfile:
+    dest: /mnt/etc/default/grub
+    regexp: ^GRUB_CMDLINE_LINUX_DEFAULT=
+    line: GRUB_CMDLINE_LINUX_DEFAULT="{{ extra_kernel_parameters }}"
+
+- name: Add commandline information to grub config
+  lineinfile:
+    dest: /mnt/etc/default/grub
+    regexp: ^GRUB_CMDLINE_LINUX=
+    line: >-
+      GRUB_CMDLINE_LINUX="cryptkey=rootfs:/etc/luks-keys/root.keyfile
+      cryptdevice=UUID={{ root_luks_uuid.stdout }}:root root=/dev/mapper/root"
+
+- name: Install grub bootloader
+  command: arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
+
+- name: Create grub config
+  command: arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg

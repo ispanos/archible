@@ -1,0 +1,31 @@
+---
+
+- name: Get cpu vendor
+  shell: |
+      case $(lscpu | grep Vendor | awk '{print $3}') in
+        "GenuineIntel") echo "intel"
+        ;;
+        "AuthenticAMD") echo "amd"
+        ;;
+      esac
+  register: cpuVendor
+
+
+- name: Install remaining necessary packages
+  command: arch-chroot /mnt pacman -S --noconfirm --needed {{ item }}
+  loop:
+    - base-devel
+    - btrfs-progs
+    - dosfstools
+    - efibootmgr
+    - linux
+    - linux-headers
+    - linux-firmware
+    - nano
+    - networkmanager
+    - man-db
+    - man-pages
+    - zsh
+    - git
+    - openssh
+    - "{{ cpuVendor.stdout }}-ucode"

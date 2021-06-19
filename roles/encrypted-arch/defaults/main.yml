@@ -1,0 +1,25 @@
+---
+install_drive: /dev/vda
+efi_partition: "{{ install_drive }}1"
+root_partition: "{{ install_drive }}2"
+new_hostname: vmpc
+user_name: test
+timezone: Europe/Athens
+locales_list: {regex: en_US\.UTF-8 UTF-8, line: en_US.UTF-8 UTF-8}
+lang: "en_US.UTF-8"
+enable_multilib: true
+extra_kernel_parameters: rw quiet idle=nowait usbcore.autosuspend=-1
+luks_keyfile: keyfile
+ansible_user: root
+pacman_cache: UUID=b186df98-e4da-4e55-bb89-4072a962cc06
+
+ssh_password_authentication: "no"
+ssh_permit_root_login: "no"
+ssh_usedns: "no"
+ssh_permit_empty_password: "no"
+ssh_challenge_response_auth: "no"
+ssh_gss_api_authentication: "no"
+ssh_x11_forwarding: "no"
+ssh_config_path: "/etc/ssh/sshd_config"
+ssh_key: git.pub
+ssh_port: '22'
